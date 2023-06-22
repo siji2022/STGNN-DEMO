@@ -11,17 +11,11 @@ from torch.autograd import Variable
 
 from learner.replay_buffer import ReplayBuffer
 from learner.replay_buffer import Transition
-from learner.actor_siji import Actor as Actor
-# from learner.actor_siji1 import Actor as ActorNew
 from learner.actor_delayedST import Actor as ActorNew
-
-#
-# # TODO: how to deal with bounded/unbounded action spaces?? Should I always assume bounded actions?
 
 
 class DAGGER(object):
 
-    # , n_s, n_a, k, device, hidden_size=32, gamma=0.99, tau=0.5):
     def __init__(self, device, args, k=None):
         """
         Initialize the DDPG networks.
@@ -39,7 +33,7 @@ class DAGGER(object):
         self.n_agents = args.getint('n_agents')
         self.n_states = n_s
         self.n_actions = n_a
-        self.len=args.getint('len')
+        self.len = args.getint('len')
         self.len_history = args.getint('len')+k-1
 
         # Device
@@ -50,12 +44,9 @@ class DAGGER(object):
         self.enable_gamma = args.getboolean('enable_gamma')
 
         # Define Networks
-        if args.get('new_model'):
-            self.actor = ActorNew(self.device, self.len, hidden_size, k, self.enable_alpha,
-                                  self.enable_beta, self.enable_gamma, args.getboolean('centralized')).to(self.device)
-        else:
-            self.actor = Actor(self.device, self.len, hidden_size, self.enable_alpha,
-                               self.enable_beta, self.enable_gamma).to(self.device)
+
+        self.actor = ActorNew(self.device, self.len, hidden_size, k, self.enable_alpha,
+                              self.enable_beta, self.enable_gamma, args.getboolean('centralized')).to(self.device)
 
         # Define Optimizers
         self.actor_optim = Adam(self.actor.parameters(),
@@ -94,18 +85,8 @@ class DAGGER(object):
         :return: The loss function in the network.
         :only support mini-batch(batch-size is 1)
         """
-        # state=batch.state[0]
-        # state_values_batch = Variable(torch.cat(tuple([s[0] for s in batch.state]))).to(self.device)
-        # state_network_batch = Variable(torch.cat(tuple([s[1] for s in batch.state]))).to(self.device)
-        # state_values_queue_batch = Variable(torch.cat(tuple([s[2] for s in batch.state])))
-        # state_network_queue_batch = Variable(torch.cat(tuple([s[3] for s in batch.state])))
-        # actor_batch = self.actor(state_values_batch, state_network_batch,state_values_queue_batch,state_network_queue_batch)
-
         n_size = self.n_agents
         batch_size = len(batch.state)
-        # a=torch.cat([ s[1]+n_size*i for i,s in enumerate (batch.state)],dim=1)
-        # x=torch.cat([s[0] for s in batch.state])
-        # u_gamma=torch.cat([s[6] for s in batch.state])
         state_values_queue = deque()
         state_network_queue = deque()
         obs_values_queue = deque()
@@ -113,8 +94,6 @@ class DAGGER(object):
         gamma_queue = deque()
 
         for i in range(self.len_history):
-            # x_h=torch.block_diag(*[s[2][i] for j,s in enumerate (batch.state)])
-            # batch*n_agents,n_agents,features
             x_h = torch.cat([s[2][i] for j, s in enumerate(batch.state)])
             state_values_queue.append(x_h)
             a_h = torch.cat(
@@ -140,7 +119,7 @@ class DAGGER(object):
         # Optimize Actor
         self.actor_optim.zero_grad()
         # Loss related to sampled Actor Gradient.
-        policy_loss = F.mse_loss(mu, optimal_action_batch) 
+        policy_loss = F.mse_loss(mu, optimal_action_batch)
         policy_loss.backward()
         self.actor_optim.step()
         # End Optimize Actor
@@ -169,35 +148,20 @@ class DAGGER(object):
         :param actor_path: The actor path.
         :return: None
         """
-        # print('Loading model from {}'.format(actor_path))
         if actor_path is not None:
-            state_dict=torch.load(actor_path, map_location)
-            # remove_prefix = 'layers_alpha.1.'
-            # state_dict = {k[len(remove_prefix):] if k.startswith(remove_prefix) else k: v for k, v in state_dict.items()}
-
-            self.actor.load_state_dict(state_dict,strict=False)
-            # self.actor.load_state_dict(torch.load(actor_path, map_location))
-            # params= [ p.numel() for p in self.actor.parameters() if p.requires_grad ]
-            # print(params)
-            # print(f'model size: {sum(p.numel() for p in self.actor.parameters() if p.requires_grad)}')
+            state_dict = torch.load(actor_path, map_location)
+            self.actor.load_state_dict(state_dict, strict=False)
             self.actor.to(self.device)
 
 
-def train_dagger_siji(env, args, device):
+def train_stgnn(env, args, device):
     debug = args.getboolean('debug')
     n_a = args.getint('n_actions')
     n_agents = args.getint('n_agents')
     batch_size = args.getint('batch_size')
     len = args.getint('len')
-    if args.getboolean('use_presaved_data'):
-        try:
-            fileopen = open(f'./presaved_data/{n_agents}_{len}', 'rb')
-            memory = pickle.load(fileopen)
-            fileopen.close()
-        except:
-            memory = ReplayBuffer(max_size=args.getint('buffer_size'))
-    else:
-        memory = ReplayBuffer(max_size=args.getint('buffer_size'))
+   
+    memory = ReplayBuffer(max_size=args.getint('buffer_size'))
 
     learner = DAGGER(device, args)
     env_name = args.get('env')
@@ -217,8 +181,8 @@ def train_dagger_siji(env, args, device):
 
     stats = {'mean': -1.0 * np.Inf, 'std': 0}
     prev_policy_loss = np.Inf
-    prev_reward =-100000
-    prev_mse_loss = 90+100000
+    prev_reward = -np.Inf
+    prev_mse_loss = np.Inf
     for i in range(n_train_episodes):
 
         beta = max(beta * beta_coeff, 0)
@@ -261,7 +225,7 @@ def train_dagger_siji(env, args, device):
             state = next_state
 
         if memory.curr_size > 4000:
-        # if memory.curr_size > 40000:
+            # if memory.curr_size > 40000:
             total_steps = args.getint('updates_per_step')
             for _ in range(total_steps):
                 transitions = memory.sample(batch_size)
@@ -276,13 +240,12 @@ def train_dagger_siji(env, args, device):
                 f'{i} lr: {learner.scheduler.get_last_lr()}, {policy_loss_sum/total_steps}')
             prev_policy_loss = policy_loss_sum
 
-        
         if i % test_interval == 0 and debug:
             test_rewards = []
-            mse_list=[]        
+            mse_list = []
             for _ in range(n_test_episodes):
-                test_loss = []  
-                
+                test_loss = []
+
                 ep_reward = 0
                 env.reset()
                 state = env.env.get_model_input()
@@ -302,31 +265,19 @@ def train_dagger_siji(env, args, device):
                 mse_list.append(np.mean(test_loss))
             mean_reward = np.mean(test_rewards)
             std_reward = np.std(test_rewards)
-            mean_mse=np.mean(mse_list)
+            mean_mse = np.mean(mse_list)
             std_mse = np.std(mse_list)
             env.env.plot(i, fname)
 
-            # learner.save_model(env_name, suffix=args.get('fname'))
             mean_reward_lb = mean_reward-std_reward/2
             mean_mse_ub = mean_mse+std_mse/2
-            # save better model
-            #  
-            # if mean_reward_lb > prev_reward-20:
-            #     learner.save_model(env_name, suffix=args.get('fname'))
-            #     prev_reward = mean_reward_lb
+        
             if mean_mse_ub < prev_mse_loss+10:
                 learner.save_model(env_name, suffix=args.get('fname'))
                 prev_mse_loss = mean_mse_ub
             else:
                 learner.load_model(
                     f'./models/actor_{env_name}_{fname}', device)
-
-            # if stats['mean'] < mean_reward:
-            #     stats['mean'] = mean_reward
-            #     stats['std'] = np.std(test_rewards)
-            #
-            #     if debug and args.get('fname'):  # save the best model
-            #         learner.save_model(args.get('env'), suffix=args.get('fname'))
 
             if debug:
                 print(
@@ -335,7 +286,7 @@ def train_dagger_siji(env, args, device):
                         total_numsteps,
                         mean_reward,
                         std_reward,
-                        mean_mse,std_mse))
+                        mean_mse, std_mse))
         sys.stdout.flush()
         if learner.scheduler.get_last_lr()[0] < 1e-7:
             break
@@ -356,17 +307,10 @@ def train_dagger_siji(env, args, device):
             state = next_state
             # env.render()
         test_rewards.append(ep_reward)
-    # env.env.plot(i)
+
     mean_reward = np.mean(test_rewards)
     stats['mean'] = mean_reward
     stats['std'] = np.std(test_rewards)
-
-    # if debug and args.get('fname'):  # save the best model
-    #     learner.save_model(args.get('env'), suffix=args.get('fname'))
-    if args.getboolean('use_presaved_data'):
-        fileopen = open(f'./presaved_data/{n_agents}_{len}', 'wb')
-        pickle.dump(memory, fileopen)
-        fileopen.close()
 
     env.close()
     return stats
