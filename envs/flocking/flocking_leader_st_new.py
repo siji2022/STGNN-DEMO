@@ -60,7 +60,7 @@ class FlockingLeaderSTNewEnv(FlockingRelativeSTEnv):
     
     def reset(self):
         super(FlockingLeaderSTNewEnv, self).reset()
-        self.quiver = None
+        self.quiver_leader = None
         v_max = np.min([self.max_velocity, 5])
         self.x[:, 2:4] = np.zeros((self.n_agents, 2))
         self.x[0:self.n_leaders, 2:4] = np.ones((self.n_leaders, 2)) * self.np_random.uniform(low=-v_max,
@@ -82,14 +82,12 @@ class FlockingLeaderSTNewEnv(FlockingRelativeSTEnv):
         U = self.x[0:self.n_leaders, 2]
         V = self.x[0:self.n_leaders, 3]
 
-        if self.quiver == None:
-            self.quiver = self.ax.quiver(X, Y, U, V, color='r')
+        if self.quiver_leader == None:
+            self.quiver_leader = self.ax.quiver(X, Y, U, V, color='r',scale=10, scale_units='inches')
         else:
-            self.quiver.set_offsets(self.x[0:self.n_leaders, 0:2])
-            self.quiver.set_UVC(U, V)
+            self.quiver_leader.set_offsets(self.x[0:self.n_leaders, 0:2])
+            self.quiver_leader.set_UVC(U, V)
 
-#         self.fig.canvas.draw()
-#         self.fig.canvas.flush_events()
         if mode == 'human':
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()

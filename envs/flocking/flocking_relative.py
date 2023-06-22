@@ -210,6 +210,7 @@ class FlockingRelativeEnv(gym.Env):
     def plot(self, j=0, fname='',dir='plots'):
         plot_details(self,j,fname,dir)
 
+
     def render(self, mode='human'):
         """
         Render the environment with agents as points in 2D space
@@ -221,21 +222,33 @@ class FlockingRelativeEnv(gym.Env):
             line1, = self.ax.plot(self.x[:, 0], self.x[:, 1],
                                   'bo', markersize=2)  # Returns a tuple of line objects, thus the comma
             self.ax.plot([0], [0], 'kx')
-            plt.ylim(np.min(self.x[:, 1]) - 15, np.max(self.x[:, 1]) + 15)
-            plt.xlim(np.min(self.x[:, 0]) - 15, np.max(self.x[:, 0]) + 15)
+            # if self.quiver is None:
+
+            self.quiver = self.ax.quiver(self.x[:, 0], self.x[:, 1], self.x[:, 2], self.x[:, 3],scale=10, scale_units='inches')
+
+            plt.ylim(np.min(self.x[:, 1]) - 5, np.max(self.x[:, 1]) + 5)
+            plt.xlim(np.min(self.x[:, 0]) - 5, np.max(self.x[:, 0]) + 5)
+            plt.grid(which='both')
+
             a = gca()
-            # a.set_xticklabels(a.get_xticks(), font)
-            # a.set_yticklabels(a.get_yticks(), font)
+     
             plt.title('GNN Controller {} agents'.format(self.n_agents))
             self.fig = fig
             self.line1 = line1
 
-        plt.ylim(np.min(self.x[:, 1]) - 50, np.max(self.x[:, 1]) + 50)
-        plt.xlim(np.min(self.x[:, 0]) - 50, np.max(self.x[:, 0]) + 50)
+
         self.line1.set_xdata(self.x[:, 0])
         self.line1.set_ydata(self.x[:, 1])
-#         self.fig.canvas.draw()
-#         self.fig.canvas.flush_events()
+
+        plt.ylim(np.min(self.x[:, 1]) - 5, np.max(self.x[:, 1]) + 5)
+        plt.xlim(np.min(self.x[:, 0]) - 5, np.max(self.x[:, 0]) + 5)
+        a = gca()
+
+
+        self.quiver.set_offsets(self.x[:, 0:2])
+        self.quiver.set_UVC(self.x[:, 2], self.x[:, 3])
+
+
         if mode == 'human':
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
@@ -248,50 +261,9 @@ class FlockingRelativeEnv(gym.Env):
             im = np.asarray(Image.open(buf))
             # buf.close()
             return im
+        # return self.fig.canvas.draw()
+    
 
-
-#     def render(self, mode='human'):
-#         """
-#         Render the environment with agents as points in 2D space
-#         """
-#         if self.fig is None:
-#             plt.ion()
-#             fig = plt.figure()
-#             self.ax = fig.add_subplot(111)
-#             line1, = self.ax.plot(self.x[:, 0], self.x[:, 1],
-#                                   'bo', markersize=2)  # Returns a tuple of line objects, thus the comma
-#             self.ax.plot([0], [0], 'kx')
-#             # if self.quiver is None:
-
-#             self.quiver = self.ax.quiver(self.x[:, 0], self.x[:, 1], self.x[:, 2], self.x[:, 3])
-
-#             plt.ylim(np.min(self.x[:, 1]) - 5, np.max(self.x[:, 1]) + 5)
-#             plt.xlim(np.min(self.x[:, 0]) - 5, np.max(self.x[:, 0]) + 5)
-#             plt.grid(which='both')
-
-#             a = gca()
-#             a.set_xticklabels(a.get_xticks())
-#             a.set_yticklabels(a.get_yticks())
-#             plt.title('GNN Controller {} agents'.format(self.n_agents))
-#             self.fig = fig
-#             self.line1 = line1
-
-
-#         self.line1.set_xdata(self.x[:, 0])
-#         self.line1.set_ydata(self.x[:, 1])
-
-#         plt.ylim(np.min(self.x[:, 1]) - 5, np.max(self.x[:, 1]) + 5)
-#         plt.xlim(np.min(self.x[:, 0]) - 5, np.max(self.x[:, 0]) + 5)
-#         a = gca()
-#         a.set_xticklabels(a.get_xticks())
-#         a.set_yticklabels(a.get_yticks())
-
-#         self.quiver.set_offsets(self.x[:, 0:2])
-#         self.quiver.set_UVC(self.x[:, 2], self.x[:, 3])
-
-#         self.fig.canvas.draw()
-#         self.fig.canvas.flush_events()
-#         return self.fig.canvas.draw()
 
     def close(self):
         pass

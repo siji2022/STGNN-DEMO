@@ -19,6 +19,7 @@ font = {'family': 'sans-serif',
         'weight': 'bold',
         'size': 14}
 
+
 class FlockingRelativeSTEnv(gym.Env):
     metadata = {'render.modes': [
         'human', 'rgb_array'], 'video.frames_per_second': 50}
@@ -95,12 +96,10 @@ class FlockingRelativeSTEnv(gym.Env):
         # r, interaction range, distance less than r will be neighbor; cant be larger than distance*1.414
         self.RANGE = self.comm_radius
 
-
         # controlls of the ground truth generators
         # control of neighbor distance
         self.C1_alpha = args.getfloat('c_alpha')
         self.C2_alpha = np.sqrt(self.C1_alpha)  # control of velocity
-
 
         self.max_accel = args.getfloat('max_accel')
         self.max_state_value = args.getfloat(
@@ -137,7 +136,6 @@ class FlockingRelativeSTEnv(gym.Env):
         self.state_network_queue.append(torch.clone(self.state_network))
         self.state_network_queue.popleft()
 
-
         # saved in history for plot
         updated_state = np.copy(self.x)
         self.history += [updated_state]
@@ -163,7 +161,6 @@ class FlockingRelativeSTEnv(gym.Env):
         self.x_features = np.dstack((self.diff[:, :, 2]/self.comm_radius, np.divide(self.diff[:, :, 0], np.multiply(self.r2, self.r2)*self.comm_radius), np.divide(self.diff[:, :, 0], self.r2),
                                      self.diff[:, :, 3]/self.comm_radius, np.divide(self.diff[:, :, 1], np.multiply(self.r2, self.r2)*self.comm_radius), np.divide(self.diff[:, :, 1], self.r2)))
 
-       
         np.fill_diagonal(self.r2, 0)
         if not self.centralized:
             self.adj_mat = (self.r2 < self.comm_radius2).astype(float)
@@ -176,7 +173,6 @@ class FlockingRelativeSTEnv(gym.Env):
 
         self.x_features = np.sum(self.x_features * self.adj_mat.reshape(
             self.n_agents, self.n_agents, 1), axis=1).reshape((self.n_agents, self.n_features))
-      
 
         # convert into pytorch type
         self.state_network = torch.tensor(self.state_network)
@@ -188,7 +184,6 @@ class FlockingRelativeSTEnv(gym.Env):
         self.obs_state_network = None
         self.u_gamma = None
 
-
     def get_stats(self):
 
         stats = calc_metrics(self)
@@ -197,10 +192,9 @@ class FlockingRelativeSTEnv(gym.Env):
     def instant_cost(self):  # sum of differences in velocities
         return calc_reward(self)
 
-
-    def reset(self,n=None):
+    def reset(self, n=None):
         if n is not None:
-            self.n_agents=n
+            self.n_agents = n
         self.fig = None
         self.history = []
         self.u_history = []
@@ -213,7 +207,7 @@ class FlockingRelativeSTEnv(gym.Env):
         self.obs_values_queue = deque()
         self.obs_network_queue = deque()
         self.gamma_queue = deque()
-        self.curr_step=0
+        self.curr_step = 0
         # initialization simple way, vel is 0
         x = np.hstack([np.random.uniform(0, np.sqrt(
             self.n_agents)*self.comm_radius, (self.n_agents, 2)), np.zeros((self.n_agents, 2))])
@@ -231,7 +225,7 @@ class FlockingRelativeSTEnv(gym.Env):
             self.obs_network_queue.append(self.obs_state_network)
             self.gamma_queue.append(self.u_gamma)
 
-        self.x_init=np.copy(self.x)
+        self.x_init = np.copy(self.x)
         return (self.x_features, self.state_network)
 
     def controller(self):
@@ -272,7 +266,6 @@ class FlockingRelativeSTEnv(gym.Env):
             diff[:, :, 0], r2), self.potential_grad(diff[:, :, 1], r2)))
         potentials = np.nan_to_num(potentials, nan=0.0)  # fill nan with 0
 
-
         p_sum = np.sum(potentials, axis=1).reshape(
             (self.n_agents, self.nx_system + 2))
         controls = np.hstack(((- p_sum[:, 4] - p_sum[:, 2]).reshape(
@@ -299,26 +292,36 @@ class FlockingRelativeSTEnv(gym.Env):
         Render the environment with agents as points in 2D space
         """
         if self.fig is None:
-            plt.clf()
             plt.ion()
             fig = plt.figure()
             self.ax = fig.add_subplot(111)
             line1, = self.ax.plot(self.x[:, 0], self.x[:, 1],
-                                  'bo', markersize=1)  # Returns a tuple of line objects, thus the comma
+                                  'bo', markersize=2)  # Returns a tuple of line objects, thus the comma
             self.ax.plot([0], [0], 'kx')
+            # if self.quiver is None:
+
+            self.quiver = self.ax.quiver(
+                self.x[:, 0], self.x[:, 1], self.x[:, 2], self.x[:, 3], scale=10, scale_units='inches')
+
             plt.ylim(np.min(self.x[:, 1]) - 5, np.max(self.x[:, 1]) + 5)
             plt.xlim(np.min(self.x[:, 0]) - 5, np.max(self.x[:, 0]) + 5)
-
-
+            plt.grid(which='both')
 
             a = gca()
+
             plt.title('GNN Controller {} agents'.format(self.n_agents))
             self.fig = fig
             self.line1 = line1
-        plt.ylim(np.min(self.x[:, 1]) - 5, np.max(self.x[:, 1]) + 5)
-        plt.xlim(np.min(self.x[:, 0]) - 5, np.max(self.x[:, 0]) + 5)
+
         self.line1.set_xdata(self.x[:, 0])
         self.line1.set_ydata(self.x[:, 1])
+
+        plt.ylim(np.min(self.x[:, 1]) - 5, np.max(self.x[:, 1]) + 5)
+        plt.xlim(np.min(self.x[:, 0]) - 5, np.max(self.x[:, 0]) + 5)
+        a = gca()
+
+        self.quiver.set_offsets(self.x[:, 0:2])
+        self.quiver.set_UVC(self.x[:, 2], self.x[:, 3])
 
         if mode == 'human':
             self.fig.canvas.draw()
