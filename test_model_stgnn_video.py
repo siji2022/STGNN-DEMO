@@ -24,7 +24,7 @@ def test(args, actor_path, render=True):
     n_agents = args.get('n_agents')
 
     env = Monitor(gym.make(env_name),
-                  f'./video/{env_name}/{fname}/{n_agents}', force=True,write_upon_reset=True)
+                  f'./video/{env_name}/{fname}/{n_agents}', force=True)
     env.env.env.params_from_cfg(args)
     # env = gym.make(env_name)
     # env.env.params_from_cfg(args)
@@ -65,7 +65,6 @@ def test(args, actor_path, render=True):
     for i in range(n_test_episodes):
         episode_reward = 0
         env.reset()
-        env.reset_video_recorder()
         # state = env.env.get_model_input()
         state = env.env.env.get_model_input()
         done = False

@@ -33,6 +33,7 @@ class FlockingLeaderEnv(FlockingRelativeEnv):
 
     def reset(self):
         super(FlockingLeaderEnv, self).reset()
+        self.quiver = None
         v_max = np.min([self.max_velocity, 5])
         # v_max = self.max_velocity
         self.x[:, 2:4] = np.zeros((self.n_agents, 2))
