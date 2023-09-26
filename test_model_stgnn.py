@@ -7,7 +7,7 @@ from envs.flocking import *
 import torch
 import sys
 import pandas as pd
-from learner.gnn_dagger_siji import DAGGER
+from learner.gnn_stgnn import DAGGER
 import torch.nn.functional as F
 import datetime
 import threading

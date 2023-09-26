@@ -61,7 +61,7 @@ class FlockingLeaderSTNewEnv(FlockingRelativeSTEnv):
     def reset(self):
         super(FlockingLeaderSTNewEnv, self).reset()
         self.quiver_leader = None
-        v_max = np.min([self.max_velocity, 5])
+        v_max = np.min([self.max_velocity, 10])
         self.x[:, 2:4] = np.zeros((self.n_agents, 2))
         self.x[0:self.n_leaders, 2:4] = np.ones((self.n_leaders, 2)) * self.np_random.uniform(low=-v_max,
                                                                                          high=v_max, size=(1, 2))

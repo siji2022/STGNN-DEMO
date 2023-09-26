@@ -22,7 +22,7 @@ font = {'family': 'sans-serif',
 
 class FlockingRelativeSTEnv(gym.Env):
     metadata = {'render.modes': [
-        'human', 'rgb_array'], 'video.frames_per_second': 50}
+        'human', 'rgb_array'], 'video.frames_per_second': 200}
 
     def __init__(self):
 

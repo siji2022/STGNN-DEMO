@@ -330,6 +330,11 @@ def plot_details(self, j=0, fname='', dir='plots', plot_leaders=False):
     # for i in range(self.NUMBER_OF_OBS):
     #     phis = np.arange(0, np.pi*2, 0.01)
     #     plt.plot(*xy(self.RK[i], phis, self.yk[i]), c='r', ls='-')
+    margin=10
+    plt.xlim(np.min(history_array[:, :, 0])-margin,
+             np.max(history_array[:, :, 0]) + margin)
+    plt.ylim(np.min(history_array[:, :, 1])-margin,
+             np.max(history_array[:, :, 1]) + margin)
     plt.savefig(f'./{dir}/{fname}_{self.n_agents}_{j}', dpi=150)
     plt.close()
 

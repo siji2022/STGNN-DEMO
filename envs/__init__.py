@@ -15,11 +15,11 @@ register(
 register(
     id='FlockingLeader-v0',
     entry_point='envs.flocking:FlockingLeaderEnv',
-    max_episode_steps=500,
+    max_episode_steps=1000,
 )
 # new leader
 register(
     id='FlockingLeaderST-v0',
     entry_point='envs.flocking:FlockingLeaderSTNewEnv',
-    max_episode_steps=500,
+    max_episode_steps=2000,
 )
